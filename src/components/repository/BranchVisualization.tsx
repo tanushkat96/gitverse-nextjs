@@ -1,43 +1,43 @@
-import { GitBranch, GitMerge, Clock, User, CheckCircle, GitCommit, Trash2 } from 'lucide-react'
-import { Card } from '@/components/ui'
-import { useState } from 'react'
+import { GitBranch, Clock, User, CheckCircle, GitCommit } from "lucide-react";
+import { Card } from "@/components/ui";
+import { useState } from "react";
 
 interface Branch {
-  id: string
-  name: string
-  isDefault: boolean
-  isCurrent: boolean
-  isProtected: boolean
+  id: string;
+  name: string;
+  isDefault: boolean;
+  isCurrent: boolean;
+  isProtected: boolean;
   lastCommit: {
-    hash: string
-    message: string
-    author: string
-    timestamp: string
-  }
-  ahead: number
-  behind: number
-  commits: BranchCommit[]
+    hash: string;
+    message: string;
+    author: string;
+    timestamp: string;
+  };
+  ahead: number;
+  behind: number;
+  commits: BranchCommit[];
 }
 
 interface BranchCommit {
-  hash: string
-  message: string
-  author: string
-  timestamp: string
-  branch: string
-  parents: string[]
-  isMerge: boolean
+  hash: string;
+  message: string;
+  author: string;
+  timestamp: string;
+  branch: string;
+  parents: string[];
+  isMerge: boolean;
 }
 
 interface BranchVisualizationProps {
-  repository?: any
+  repository?: any;
 }
 
-type FilterType = 'all' | 'active' | 'stale' | 'merged'
+type FilterType = "all" | "active" | "stale" | "merged";
 
 export function BranchVisualization({ repository }: BranchVisualizationProps) {
-  const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null)
-  const [filter, setFilter] = useState<FilterType>('active')
+  const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
+  const [filter, setFilter] = useState<FilterType>("active");
 
   // Use real branches from repository or empty array
   const branches: Branch[] =
@@ -48,58 +48,67 @@ export function BranchVisualization({ repository }: BranchVisualizationProps) {
       isCurrent: false,
       isProtected: branch.isProtected || false,
       lastCommit: {
-        hash: '',
-        message: '',
-        author: '',
+        hash: "",
+        message: "",
+        author: "",
         timestamp: branch.lastCommitAt || new Date().toISOString(),
       },
       ahead: 0,
       behind: 0,
       commits: [],
-    })) || []
+    })) || [];
 
   // Debug log
-  console.log('[BranchVisualization] Repository:', repository)
-  console.log('[BranchVisualization] Branches:', branches)
+  console.log("[BranchVisualization] Repository:", repository);
+  console.log("[BranchVisualization] Branches:", branches);
 
   const formatDate = (timestamp: string) => {
-    const date = new Date(timestamp)
-    const now = new Date()
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInHours = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+    );
 
-    if (diffInHours < 1) return 'Just now'
-    if (diffInHours < 24) return `${diffInHours}h ago`
-    if (diffInHours < 48) return 'Yesterday'
-    if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`
+    if (diffInHours < 1) return "Just now";
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    if (diffInHours < 48) return "Yesterday";
+    if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
 
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  }
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
 
   const filteredBranches = branches.filter((branch) => {
     switch (filter) {
-      case 'active':
+      case "active":
         // Show all branches (active means all branches, not filtered)
-        return true
-      case 'stale':
+        return true;
+      case "stale":
         const diffInDays = Math.floor(
-          (new Date().getTime() - new Date(branch.lastCommit.timestamp).getTime()) /
+          (new Date().getTime() -
+            new Date(branch.lastCommit.timestamp).getTime()) /
             (1000 * 60 * 60 * 24)
-        )
-        return diffInDays > 30
-      case 'merged':
-        return branch.ahead === 0 && branch.behind > 0
+        );
+        return diffInDays > 30;
+      case "merged":
+        return branch.ahead === 0 && branch.behind > 0;
       default:
-        return true
+        return true;
     }
-  })
+  });
 
   const getBranchTypeColor = (name: string) => {
-    if (name.startsWith('feature/')) return 'bg-blue-500/20 text-blue-500 border-blue-500/30'
-    if (name.startsWith('bugfix/') || name.startsWith('hotfix/'))
-      return 'bg-red-500/20 text-red-500 border-red-500/30'
-    if (name === 'develop') return 'bg-purple-500/20 text-purple-500 border-purple-500/30'
-    return 'bg-green-500/20 text-green-500 border-green-500/30'
-  }
+    if (name.startsWith("feature/"))
+      return "bg-blue-500/20 text-blue-500 border-blue-500/30";
+    if (name.startsWith("bugfix/") || name.startsWith("hotfix/"))
+      return "bg-red-500/20 text-red-500 border-red-500/30";
+    if (name === "develop")
+      return "bg-purple-500/20 text-purple-500 border-purple-500/30";
+    return "bg-green-500/20 text-green-500 border-green-500/30";
+  };
 
   return (
     <div className="space-y-6">
@@ -160,7 +169,9 @@ export function BranchVisualization({ repository }: BranchVisualizationProps) {
               <GitCommit className="h-5 w-5 text-blue-500" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{branches.reduce((sum, b) => sum + b.ahead, 0)}</p>
+              <p className="text-2xl font-bold">
+                {branches.reduce((sum, b) => sum + b.ahead, 0)}
+              </p>
               <p className="text-xs text-muted-foreground">Commits Ahead</p>
             </div>
           </div>
@@ -175,10 +186,11 @@ export function BranchVisualization({ repository }: BranchVisualizationProps) {
                 {
                   branches.filter((b) => {
                     const days = Math.floor(
-                      (new Date().getTime() - new Date(b.lastCommit.timestamp).getTime()) /
+                      (new Date().getTime() -
+                        new Date(b.lastCommit.timestamp).getTime()) /
                         (1000 * 60 * 60 * 24)
-                    )
-                    return days > 30
+                    );
+                    return days > 30;
                   }).length
                 }
               </p>
@@ -197,7 +209,7 @@ export function BranchVisualization({ repository }: BranchVisualizationProps) {
               <Card className="glass p-8 text-center">
                 <p className="text-muted-foreground">
                   {branches.length === 0
-                    ? 'No branches found in this repository'
+                    ? "No branches found in this repository"
                     : `No ${filter} branches found`}
                 </p>
               </Card>
@@ -213,7 +225,9 @@ export function BranchVisualization({ repository }: BranchVisualizationProps) {
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         <GitBranch className="h-4 w-4 text-primary flex-shrink-0" />
-                        <span className="font-medium truncate">{branch.name}</span>
+                        <span className="font-medium truncate">
+                          {branch.name}
+                        </span>
                         {branch.isDefault && (
                           <span className="text-xs glass px-2 py-0.5 rounded-full bg-primary/20 text-primary">
                             default
@@ -237,7 +251,9 @@ export function BranchVisualization({ repository }: BranchVisualizationProps) {
                       <User className="h-3 w-3" />
                       <span>{branch.lastCommit.author}</span>
                       <span>•</span>
-                      <span className="truncate">{branch.lastCommit.message}</span>
+                      <span className="truncate">
+                        {branch.lastCommit.message}
+                      </span>
                     </div>
 
                     {/* Stats */}
@@ -278,50 +294,54 @@ export function BranchVisualization({ repository }: BranchVisualizationProps) {
           <h3 className="text-lg font-semibold">Branch Graph</h3>
           <Card className="glass p-6">
             <div className="space-y-4">
-              {(repository?.commits || []).slice(0, 10).map((commit: any, index: number) => {
-                const branchColor = getBranchTypeColor(commit.branch)
+              {(repository?.commits || [])
+                .slice(0, 10)
+                .map((commit: any, index: number) => {
+                  const branchColor = getBranchTypeColor(commit.branch);
 
-                return (
-                  <div key={commit.hash} className="relative">
-                    {/* Connection lines */}
-                    {index > 0 && <div className="absolute left-2 -top-4 h-4 w-px bg-primary/30" />}
+                  return (
+                    <div key={commit.hash} className="relative">
+                      {/* Connection lines */}
+                      {index > 0 && (
+                        <div className="absolute left-2 -top-4 h-4 w-px bg-primary/30" />
+                      )}
 
-                    <div className="flex items-start gap-3">
-                      {/* Commit node */}
-                      <div className="relative flex-shrink-0">
-                        {commit.message?.toLowerCase().includes('merge') ? (
-                          <div className="p-1 rounded-full bg-purple-500/20 border-2 border-purple-500">
-                            <GitMerge className="h-3 w-3 text-purple-500" />
-                          </div>
-                        ) : (
-                          <div className={`p-1 rounded-full ${branchColor} border-2`}>
+                      <div className="flex items-start gap-3">
+                        {/* Commit node */}
+                        <div className="relative flex-shrink-0">
+                          <div
+                            className={`p-1 rounded-full ${branchColor} border-2`}
+                          >
                             <div className="h-2 w-2 rounded-full bg-current" />
                           </div>
-                        )}
-                      </div>
+                        </div>
 
-                      {/* Commit info */}
-                      <div className="flex-1 min-w-0 glass p-3 rounded-lg">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{commit.message}</p>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                              <span>{commit.authorName}</span>
-                              <span>•</span>
-                              <code className="font-mono">{commit.hash?.substring(0, 7)}</code>
+                        {/* Commit info */}
+                        <div className="flex-1 min-w-0 glass p-3 rounded-lg">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {commit.message}
+                              </p>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                <span>{commit.authorName}</span>
+                                <span>•</span>
+                                <code className="font-mono">
+                                  {commit.hash?.substring(0, 7)}
+                                </code>
+                              </div>
                             </div>
+                            <span
+                              className={`text-xs px-2 py-0.5 rounded-full border ${branchColor}`}
+                            >
+                              {selectedBranch?.name || "main"}
+                            </span>
                           </div>
-                          <span
-                            className={`text-xs px-2 py-0.5 rounded-full border ${branchColor}`}
-                          >
-                            {selectedBranch?.name || 'main'}
-                          </span>
                         </div>
                       </div>
                     </div>
-                  </div>
-                )
-              })}
+                  );
+                })}
             </div>
           </Card>
         </div>
@@ -374,12 +394,16 @@ export function BranchVisualization({ repository }: BranchVisualizationProps) {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="glass p-4 rounded-lg">
                     <p className="text-xs text-muted-foreground mb-1">Ahead</p>
-                    <p className="text-2xl font-bold text-green-500">{selectedBranch.ahead}</p>
+                    <p className="text-2xl font-bold text-green-500">
+                      {selectedBranch.ahead}
+                    </p>
                     <p className="text-xs text-muted-foreground">commits</p>
                   </div>
                   <div className="glass p-4 rounded-lg">
                     <p className="text-xs text-muted-foreground mb-1">Behind</p>
-                    <p className="text-2xl font-bold text-red-500">{selectedBranch.behind}</p>
+                    <p className="text-2xl font-bold text-red-500">
+                      {selectedBranch.behind}
+                    </p>
                     <p className="text-xs text-muted-foreground">commits</p>
                   </div>
                 </div>
@@ -387,35 +411,28 @@ export function BranchVisualization({ repository }: BranchVisualizationProps) {
                 <div className="glass p-4 rounded-lg">
                   <p className="text-sm font-medium mb-2">Last Commit</p>
                   <div className="space-y-2">
-                    <p className="text-sm">{selectedBranch.lastCommit.message}</p>
+                    <p className="text-sm">
+                      {selectedBranch.lastCommit.message}
+                    </p>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <User className="h-3 w-3" />
                       <span>{selectedBranch.lastCommit.author}</span>
                       <span>•</span>
-                      <code className="font-mono">{selectedBranch.lastCommit.hash}</code>
+                      <code className="font-mono">
+                        {selectedBranch.lastCommit.hash}
+                      </code>
                       <span>•</span>
-                      <span>{formatDate(selectedBranch.lastCommit.timestamp)}</span>
+                      <span>
+                        {formatDate(selectedBranch.lastCommit.timestamp)}
+                      </span>
                     </div>
                   </div>
                 </div>
-
-                {!selectedBranch.isDefault && !selectedBranch.isProtected && (
-                  <div className="flex gap-2 pt-2">
-                    <button className="flex-1 glass px-4 py-2 rounded-lg hover:bg-white/10 transition-colors flex items-center justify-center gap-2">
-                      <GitMerge className="h-4 w-4" />
-                      Merge
-                    </button>
-                    <button className="flex-1 glass px-4 py-2 rounded-lg hover:bg-red-500/10 text-red-500 transition-colors flex items-center justify-center gap-2">
-                      <Trash2 className="h-4 w-4" />
-                      Delete
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
           </Card>
         </div>
       )}
     </div>
-  )
+  );
 }

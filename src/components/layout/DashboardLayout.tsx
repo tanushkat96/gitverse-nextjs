@@ -1,8 +1,8 @@
-'use client'
+"use client";
 
-import React, { useState } from 'react'
-import Link from 'next/link'
-import { useRouter, usePathname } from 'next/navigation'
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
 import {
   GitBranch,
   LayoutDashboard,
@@ -12,9 +12,8 @@ import {
   User,
   ChevronLeft,
   Menu,
-  Sparkles,
-} from 'lucide-react'
-import { useAuth } from '@/contexts/AuthContext'
+} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,45 +21,46 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Button } from '@/components/ui'
-import { toast } from '@/hooks/use-toast'
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui";
+import { toast } from "@/hooks/use-toast";
 
 interface DashboardLayoutProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
-export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
-  const { user, logout } = useAuth()
-  const router = useRouter()
-  const pathname = usePathname()
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
+  children,
+}) => {
+  const { user, logout } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
-    logout()
+    logout();
     toast({
-      title: 'Logged out',
-      description: 'You have been successfully logged out',
-    })
-    router.push('/login')
-  }
+      title: "Logged out",
+      description: "You have been successfully logged out",
+    });
+    router.push("/login");
+  };
 
   const navItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: Search, label: 'Search', path: '/search' },
-    { icon: Sparkles, label: 'AI Assistant', path: '/ai-assistant' },
-    { icon: Settings, label: 'Settings', path: '/settings' },
-  ]
+    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
+    { icon: Search, label: "Search", path: "/search" },
+    { icon: Settings, label: "Settings", path: "/settings" },
+  ];
 
-  const isActive = (path: string) => pathname === path
+  const isActive = (path: string) => pathname === path;
 
   return (
     <div className="min-h-screen bg-background">
       {/* Sidebar - Desktop */}
       <aside
         className={`fixed top-0 left-0 z-40 h-screen transition-all duration-300 hidden md:block ${
-          sidebarOpen ? 'w-64' : 'w-20'
+          sidebarOpen ? "w-64" : "w-20"
         }`}
       >
         <div className="h-full glass border-r border-border/50 flex flex-col">
@@ -87,8 +87,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                 href={item.path}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${
                   isActive(item.path)
-                    ? 'bg-primary/10 text-primary font-medium'
-                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
                 }`}
               >
                 <item.icon className="h-5 w-5 shrink-0" />
@@ -104,7 +104,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
               className="w-full flex items-center justify-center p-2 rounded-lg hover:bg-accent transition-colors"
             >
               <ChevronLeft
-                className={`h-5 w-5 transition-transform ${!sidebarOpen ? 'rotate-180' : ''}`}
+                className={`h-5 w-5 transition-transform ${!sidebarOpen ? "rotate-180" : ""}`}
               />
             </button>
           </div>
@@ -139,8 +139,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                     onClick={() => setMobileMenuOpen(false)}
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${
                       isActive(item.path)
-                        ? 'bg-primary/10 text-primary font-medium'
-                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
                     }`}
                   >
                     <item.icon className="h-5 w-5" />
@@ -154,7 +154,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
       )}
 
       {/* Main Content */}
-      <div className={`transition-all duration-300 ${sidebarOpen ? 'md:ml-64' : 'md:ml-20'}`}>
+      <div
+        className={`transition-all duration-300 ${sidebarOpen ? "md:ml-64" : "md:ml-20"}`}
+      >
         {/* Top Bar */}
         <header className="sticky top-0 z-30 glass border-b border-border/50">
           <div className="px-4 py-3 flex items-center justify-between">
@@ -174,14 +176,20 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                 <Button variant="ghost" className="gap-2">
                   <div className="h-8 w-8 rounded-full bg-gradient-primary flex items-center justify-center">
                     {user?.avatar ? (
-                      <img src={user.avatar} alt={user.name} className="rounded-full" />
+                      <img
+                        src={user.avatar}
+                        alt={user.name}
+                        className="rounded-full"
+                      />
                     ) : (
                       <User className="h-4 w-4 text-primary-foreground" />
                     )}
                   </div>
                   <div className="hidden md:block text-left">
                     <div className="text-sm font-medium">{user?.name}</div>
-                    <div className="text-xs text-muted-foreground">{user?.email}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {user?.email}
+                    </div>
                   </div>
                 </Button>
               </DropdownMenuTrigger>
@@ -189,16 +197,21 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium">{user?.name}</p>
-                    <p className="text-xs text-muted-foreground">{user?.email}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {user?.email}
+                    </p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push('/settings')}>
+                <DropdownMenuItem onClick={() => router.push("/settings")}>
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="text-destructive"
+                >
                   <LogOut className="mr-2 h-4 w-4" />
                   Log out
                 </DropdownMenuItem>
@@ -211,5 +224,5 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
         <main className="p-6">{children}</main>
       </div>
     </div>
-  )
-}
+  );
+};
