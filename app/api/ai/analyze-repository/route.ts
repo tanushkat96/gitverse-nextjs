@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       );
     }
     return NextResponse.json(
-      { error: "Failed to analyze repository", details: error.message },
+      { error: "Failed to analyze repository" },
       { status: 500 }
     );
   }

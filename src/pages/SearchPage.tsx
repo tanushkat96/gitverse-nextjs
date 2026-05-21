@@ -14,6 +14,7 @@ import {
   CardContent,
   Button,
   Input,
+  EmptyState,
 } from "@/components/ui";
 import { buildApiUrl } from "@/services/apiConfig";
 import axios from "axios";
@@ -149,13 +150,32 @@ export default function SearchPage() {
 
         {/* Repository Grid/List */}
         {loading ? (
-          <div className="text-center py-12 text-muted-foreground">
-            Loading repositories...
-          </div>
+         <div
+  role="status"
+  aria-live="polite"
+  className="flex items-center justify-center py-12 text-muted-foreground motion-safe:animate-pulse motion-reduce:animate-none"
+>
+  <span aria-hidden="true">Loading repositories...</span>
+  <span className="sr-only">Loading repositories...</span>
+</div>
         ) : sortedRepositories.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            No repositories found. Try adjusting your search query.
-          </div>
+          searchQuery ? (
+            <EmptyState
+              icon={Search}
+              title="No Results Found"
+              description="We couldn't find any repositories matching your search query. Try a different term."
+              actionLabel="Clear Search"
+              onAction={() => setSearchQuery("")}
+            />
+          ) : (
+            <EmptyState
+              icon={GitBranch}
+              title="No Repositories Yet"
+              description="You haven't analyzed any repositories. Head to the dashboard to get started!"
+              actionLabel="Go to Dashboard"
+              onAction={() => router.push("/dashboard")}
+            />
+          )
         ) : viewMode === "grid" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {sortedRepositories.map((repo, index) => (
