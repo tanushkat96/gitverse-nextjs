@@ -203,17 +203,19 @@ export default function RepositoryAnalysis() {
       );
 
       const nextJob = response.data.job || response.data;
-      // Only reset lastProgressAt when progress actually changes value
-      // Comparing against current job state prevents resetting on unchanged
-      // fields like 0 / "Queued" which would prevent the timeout from firing
-      const prevPercent = job?.progressPercent ?? null;
-      const prevMessage = job?.progressMessage ?? null;
-      const nextPercent = nextJob?.progressPercent ?? null;
-      const nextMessage = nextJob?.progressMessage ?? null;
-      if (nextPercent !== prevPercent || nextMessage !== prevMessage) {
-        lastProgressAt.current = Date.now();
-      }
-      setJob(nextJob);
+      // Use functional setJob so we always compare against the latest job
+      // state, avoiding the stale-closure bug where the polling loop holds
+      // an old snapshot of job and never sees progress-only updates.
+      setJob((prevJob) => {
+        const prevPercent = prevJob?.progressPercent ?? null;
+        const prevMessage = prevJob?.progressMessage ?? null;
+        const nextPercent = nextJob?.progressPercent ?? null;
+        const nextMessage = nextJob?.progressMessage ?? null;
+        if (nextPercent !== prevPercent || nextMessage !== prevMessage) {
+          lastProgressAt.current = Date.now();
+        }
+        return nextJob;
+      });
 
       if (nextJob?.status === "DONE") {
         pollingStartedAt.current = null;
