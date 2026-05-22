@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/middleware";
+import { requireAuth } from "@/lib/api-auth";
 import { GitHubService, GitHubRateLimitError } from "@/lib/services/githubService";
 import { sanitizeErrorMessage } from "@/lib/utils/rateLimit";
 import { repositoryService } from "@/lib/services/repositoryService";
@@ -33,13 +33,20 @@ export async function POST(request: NextRequest) {
     }
 
     const github = new GitHubService(token);
+    const valid = await github.validateToken();
+    if (!valid) {
+      return NextResponse.json(
+        {
+          error:
+            "Your GitHub token is invalid or has expired. Reconnect your GitHub account and provide a fresh token.",
+        },
+        { status: 401 },
+      );
+    }
     const repoData = await github.getRepository(parsed.owner, parsed.repo);
 
     if (!repoData) {
-      return NextResponse.json(
-        { error: "Repository not found. It may have been renamed, deleted, or is inaccessible with the provided token." },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Not Found" }, { status: 404 });
     }
 
     const repository = await repositoryService.createRepository({
@@ -60,9 +67,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(
-      { error: "Failed to import from GitHub" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

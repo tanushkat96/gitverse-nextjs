@@ -47,9 +47,12 @@ function noStoreResponse(data: unknown, status = 200) {
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
 
+  const deliveryId = request.headers.get("x-github-delivery") || "unknown";
   const signature = request.headers.get("x-hub-signature-256");
   const event = request.headers.get("x-github-event");
   const secret = process.env.GITHUB_WEBHOOK_SECRET || "";
+
+  console.log(`webhook delivery ${deliveryId}: event=${event}`);
 
   if (
     !verifyGitHubWebhookSignature({
@@ -58,33 +61,35 @@ export async function POST(request: NextRequest) {
       webhookSecret: secret,
     })
   ) {
-    return noStoreResponse({ error: "Invalid signature" }, 401);
+    console.warn(`webhook delivery ${deliveryId}: invalid signature`);
+    return noStoreResponse({ error: "Invalid signature", deliveryId }, 401);
   }
 
   if (event !== "pull_request") {
-    return noStoreResponse({ ok: true, ignored: true, event });
+    return noStoreResponse({ ok: true, ignored: true, event, deliveryId });
   }
 
   let payload: PullRequestWebhookPayload;
   try {
     payload = JSON.parse(rawBody);
   } catch {
-    return noStoreResponse({ error: "Invalid JSON" }, 400);
+    console.warn(`webhook delivery ${deliveryId}: invalid JSON`);
+    return noStoreResponse({ error: "Invalid JSON", deliveryId }, 400);
   }
 
   const action = payload.action;
   if (!shouldHandlePullRequestAction(action)) {
-    return noStoreResponse({ ok: true, ignored: true, action });
+    return noStoreResponse({ ok: true, ignored: true, action, deliveryId });
   }
 
   // Ignore draft PRs until they become ready_for_review
   if (payload.pull_request?.draft && action !== "ready_for_review") {
-    return noStoreResponse({ ok: true, ignored: true, reason: "draft" });
+    return noStoreResponse({ ok: true, ignored: true, reason: "draft", deliveryId });
   }
 
   // Avoid replying to bots (including ourselves)
   if (payload.sender?.type === "Bot") {
-    return noStoreResponse({ ok: true, ignored: true, reason: "bot" });
+    return noStoreResponse({ ok: true, ignored: true, reason: "bot", deliveryId });
   }
 
   const owner = payload.repository?.owner?.login;
@@ -93,39 +98,28 @@ export async function POST(request: NextRequest) {
   const installationId = payload.installation?.id;
 
   if (!owner || !repo || !number || !installationId) {
-    return noStoreResponse({ error: "Missing required fields" }, 400);
+    console.warn(`webhook delivery ${deliveryId}: missing required fields`);
+    return noStoreResponse({ error: "Missing required fields", deliveryId }, 400);
   }
 
   try {
     const repoFullName = `${owner}/${repo}`;
 
     // Gate by DB selection: only auto-review repos that users explicitly enabled.
-    // Verify the installation belongs to a registered user to enforce ownership.
+    // Verify the installation strictly matches the authenticated webhook payload to enforce ownership.
     const enabledRepo = await prisma.gitHubRepo.findFirst({
       where: {
         repoFullName,
         enabled: true,
-        OR: [
-          { installationId: BigInt(installationId) },
-          { installationId: null },
-        ],
+        installationId: BigInt(installationId),
       },
       orderBy: [{ updatedAt: "desc" }],
     });
 
     if (!enabledRepo) {
-      return noStoreResponse({ ok: true, ignored: true, reason: "repo_not_enabled" });
+      console.log(`webhook delivery ${deliveryId}: repo not enabled (${repoFullName})`);
+      return noStoreResponse({ ok: true, ignored: true, reason: "repo_not_enabled", deliveryId });
     }
-
-    // Backfill installationId for future lookups.
-    await prisma.gitHubRepo.updateMany({
-      where: {
-        repoFullName,
-        enabled: true,
-        installationId: null,
-      },
-      data: { installationId: BigInt(installationId) },
-    });
 
     const app = new GitHubAppService();
     const installationToken =
@@ -186,10 +180,12 @@ export async function POST(request: NextRequest) {
       });
     } catch (e: any) {
       if (e?.code === "P2002") {
+        console.log(`webhook delivery ${deliveryId}: already reviewed (PR #${number}, sha=${headSha})`);
         return noStoreResponse({
           ok: true,
           ignored: true,
           reason: "already_reviewed",
+          deliveryId,
         });
       }
       throw e;
@@ -259,6 +255,7 @@ export async function POST(request: NextRequest) {
       ok: true,
       posted: postedUrl,
       postError,
+      deliveryId,
       stored: {
         pullRequestId: prRecord.id,
         prReviewId: reviewRow.id,
@@ -266,9 +263,9 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error("GitHub webhook PR review error:", sanitizeErrorMessage(error));
+    console.error(`webhook delivery ${deliveryId}: ${sanitizeErrorMessage(error)}`);
     return noStoreResponse(
-      { error: "Failed to process PR webhook" },
+      { error: "Failed to process PR webhook", deliveryId },
       500
     );
   }
