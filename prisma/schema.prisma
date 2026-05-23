@@ -332,7 +332,6 @@ model Language {
   @@unique([repositoryId, name])
   // Index for fast language lookup per repository
   @@index([repositoryId])
-  // Index to speed up duplicate-prevention checks on (repositoryId, name)
-  @@index([repositoryId, name])
+  
   @@map("languages")
 }
