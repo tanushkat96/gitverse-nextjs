@@ -7,8 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import Link from "next/link";
 
-import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { RepositoryOverview } from "@/components/repository/RepositoryOverview";
 import { FileStructure } from "@/components/repository/FileStructure";
@@ -145,8 +144,7 @@ export default function RepositoryAnalysis() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // âœ… ERROR STATE (improved usage)
-  const [error, setError] = useState<string | null>(null);
+  
 
   // Timeout / stuck state
   const [analysisTimedOut, setAnalysisTimedOut] = useState(false);
@@ -380,15 +378,22 @@ export default function RepositoryAnalysis() {
       }
     } catch (err: any) {
       console.error("Error fetching analysis job:", err);
-      setError(
-        err.response?.data?.error ||
-          err.response?.data?.message ||
-          err.message ||
-          "Failed to connect to the analysis service."
-      );
+      
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || "Failed to connect to the analysis service.";
+      
+      // 1. Surface inline error state
+      setError(errorMessage);
+      
+      // 2. Stop polling to prevent spamming the user/server
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+      setIsPolling(false); // If you are tracking polling via a boolean state
+
+      // 3. Show a one-time toast notification
       toast({
         title: "Error checking analysis status",
-        description: err.response?.data?.error || err.response?.data?.message || err.message || "Failed to connect to the analysis service.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
