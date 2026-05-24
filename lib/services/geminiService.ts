@@ -124,8 +124,12 @@ export class GeminiService {
 
     try {
       if (history && history.length > 0) {
+        // Cap history to prevent context limit failures
+        const MAX_HISTORY_LENGTH = 10;
+        const recentHistory = history.slice(-MAX_HISTORY_LENGTH);
+
         const contents = [
-          ...history.map((msg) => ({
+          ...recentHistory.map((msg) => ({
             role: msg.role === "assistant" ? "model" : "user",
             parts: [{ text: msg.content }],
           })),
