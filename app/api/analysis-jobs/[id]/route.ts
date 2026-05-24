@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { requireAuth, isHttpError } from "@/lib/middleware";
+import { requireAuth, isHttpError , sanitizeError } from "@/lib/middleware";
 import { analysisJobService } from "@/lib/services/analysisJobService";
 
 const lastKickAtByJobId = new Map<string, number>();
@@ -64,7 +64,7 @@ export async function GET(
       },
     });
   } catch (error: any) {
-    console.error("Get analysis job error:", error);
+    console.error("Get analysis job error:", sanitizeError(error));
 
     if (isHttpError(error)) {
       return NextResponse.json(

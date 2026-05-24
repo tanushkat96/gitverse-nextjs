@@ -273,6 +273,35 @@ Environment Variables:**
 3. Add environment variables in Vercel dashboard
 4. Deploy!
 
+#### ✅ Vercel Environment Variables Checklist
+
+Add these in **Vercel Dashboard → Settings → Environment Variables**:
+
+| Variable | Required | When needed |
+|---|---|---|
+| `DATABASE_URL` | ✅ Always | PostgreSQL connection string (use NeonDB pooler URL) |
+| `NEXTAUTH_SECRET` | ✅ Always | Session encryption — generate with `openssl rand -base64 32` |
+| `NEXTAUTH_URL` | ✅ Always | Your production domain e.g. `https://your-app.vercel.app` |
+| `GEMINI_API_KEY` | ✅ Always | Google Gemini AI — get from [aistudio.google.com](https://aistudio.google.com) |
+| `JWT_SECRET` | ✅ Always | JWT signing secret |
+| `GOOGLE_CLIENT_ID` | ⚡ OAuth | Only if using Google login |
+| `GOOGLE_CLIENT_SECRET` | ⚡ OAuth | Only if using Google login |
+| `GITHUB_APP_ID` | ⚡ PR Reviews | Only if using GitHub App integration |
+| `GITHUB_APP_PRIVATE_KEY` | ⚡ PR Reviews | Only if using GitHub App integration |
+| `GITHUB_WEBHOOK_SECRET` | ⚡ PR Reviews | Only if using GitHub webhooks |
+| `ANALYSIS_RUNNER_SECRET` | ⚡ Cron | Required for scheduled analysis jobs on Vercel |
+| `GITVERSE_ANALYSIS_BACKEND` | ⚡ Cron | URL of your analysis worker backend |
+| `SMTP_HOST` | ⚡ Email | Only if using password reset emails |
+| `SMTP_USER` | ⚡ Email | Only if using password reset emails |
+| `SMTP_PASS` | ⚡ Email | Only if using password reset emails |
+
+#### ⚠️ Common Vercel Deployment Mistakes
+
+- **Wrong DATABASE_URL** — Use the **pooler** URL from NeonDB for Vercel (not direct connection)
+- **Missing NEXTAUTH_URL** — Must be set to your exact production domain
+- **GITHUB_APP_PRIVATE_KEY format** — Paste with literal `\n` between lines, wrapped in quotes
+- **ANALYSIS_RUNNER_SECRET not set** — Recommended for security; without it, the cron endpoint runs unauthenticated on Vercel
+
 ### Docker
 
 ```bash
@@ -336,6 +365,11 @@ Optional:
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+## 💖 Contributors & Thanks
+
+A huge thank you to all contributors who have helped improve GitVerse ❤️
+Your efforts make this project stronger, more reliable, and more impactful for the community.
 
 ## 📄 License
 

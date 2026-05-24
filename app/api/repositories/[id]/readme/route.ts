@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isHttpError, requireAuth } from "@/lib/middleware";
+import { isHttpError, requireAuth , sanitizeError } from "@/lib/middleware";
 import { repositoryService } from "@/lib/services/repositoryService";
 import { GitHubRateLimitError } from "@/lib/services/githubService";
 
@@ -32,7 +32,7 @@ export async function POST(
       },
     });
   } catch (error: any) {
-    console.error("Fetch README error:", error);
+    console.error("Fetch README error:", sanitizeError(error));
 
     if (error instanceof GitHubRateLimitError) {
       return NextResponse.json(
