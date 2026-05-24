@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useRef } from "react";
+import RepositoryAnalysisProgress  from "@/components/repository/RepositoryAnalysisProgress";
 import { useParams } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { RepositoryOverview } from "@/components/repository/RepositoryOverview";
@@ -116,6 +117,7 @@ export default function RepositoryAnalysis() {
   const [repository, setRepository] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
   const [job, setJob] = useState<any>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -177,6 +179,24 @@ export default function RepositoryAnalysis() {
       stopped = true;
     };
   }, [repository?.status, repository?.latestJob?.id, job?.id, job?.status]);
+
+  useEffect(() => {
+  if (!isAnalyzing) return;
+
+  setCurrentStep(0);
+
+  const interval = setInterval(() => {
+    setCurrentStep((prev) => {
+      if (prev < 4) {
+        return prev + 1;
+      }
+
+      return prev;
+    });
+  }, 2500);
+
+  return () => clearInterval(interval);
+}, [isAnalyzing]);
 
   const fetchRepository = async () => {
     if (!id) return;
@@ -391,12 +411,33 @@ export default function RepositoryAnalysis() {
               )}
             </div>
 
-            {isAnalyzing ? (
+            {/* {isAnalyzing ? (
               <div className="glass rounded-lg p-12 text-center space-y-4 animate-pulse">
                 <div className="flex justify-center">
                   <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
                 </div>
-                <div>
+                <div> */}
+
+                {isAnalyzing ? (
+  <div className="animate-fade-in-up">
+    <RepositoryAnalysisProgress currentStep={currentStep} />
+
+    <div className="mt-6 glass rounded-lg p-4 text-center">
+      <p className="text-sm text-muted-foreground">
+        {job?.progressPercent != null && job?.progressPercent >= 0
+          ? `${Math.min(Math.round(job.progressPercent), 100)}% complete`
+          : "Processing repository analysis..."}
+      </p>
+
+      {job?.progressMessage && (
+        <p className="text-sm mt-2 text-primary font-medium">
+          {job.progressMessage}
+        </p>
+      )}
+    </div>
+  </div>
+) : error && !repository ? (
+
                   <h2 className="text-xl font-semibold mb-2">
                     Analyzing Repository
                   </h2>
