@@ -56,19 +56,20 @@ export async function POST(request: NextRequest) {
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    await prisma.user.update({
-  where: { id: user.userId },
-  data: {
-    passwordHash: hashedPassword,
-    passwordChangedAt: new Date(),
-  },
-});
-
-await prisma.session.deleteMany({
-  where: {
-    userId: user.userId,
-  },
-});
+    await prisma.$transaction([
+  prisma.user.update({
+    where: { id: user.userId },
+    data: {
+      passwordHash: hashedPassword,
+      passwordChangedAt: new Date(),
+    },
+  }),
+  prisma.session.deleteMany({
+    where: {
+      userId: user.userId,
+    },
+  }),
+]);
 
     return NextResponse.json({ message: "Password changed successfully" });
   } catch (error: any) {

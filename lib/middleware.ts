@@ -19,14 +19,24 @@ const token = authHeader.substring(7);
 const payload = verifyToken(token);
 
 if (payload) {
-  const dbUser = await prisma.user.findUnique({ where: { id: payload.userId } });
+  const dbUser = await prisma.user.findUnique({
+    where: { id: payload.userId },
+    select: { passwordChangedAt: true },
+  });
 
-  const passwordChangedAt = (dbUser as any)?.passwordChangedAt as Date | undefined;
+  if (!dbUser) {
+    return null;
+  }
+
+  const issuedAt =
+    typeof (payload as any).iat === "number"
+      ? (payload as any).iat
+      : null;
 
   if (
-    passwordChangedAt &&
-    (payload as any).iat &&
-    (payload as any).iat * 1000 < passwordChangedAt.getTime()
+    dbUser.passwordChangedAt &&
+    (issuedAt === null ||
+      issuedAt * 1000 < dbUser.passwordChangedAt.getTime())
   ) {
     return null;
   }
