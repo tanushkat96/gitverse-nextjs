@@ -577,14 +577,16 @@ if (existingRepositoryName) {
 
       // Adjust to ensure sum is exactly 100%
       const sum = roundedPercentages.reduce((acc, val) => acc + val, 0);
-      if (sum > 0 && sum !== 100) {
+      if (sum > 0 && sum !== 100 && roundedPercentages.length > 0) {
         const diff = 100 - sum;
         // Add difference to the largest percentage
         const maxIndex = roundedPercentages.indexOf(
           Math.max(...roundedPercentages),
         );
-        roundedPercentages[maxIndex] =
-          Math.round((roundedPercentages[maxIndex] + diff) * 100) / 100;
+        if (maxIndex !== -1) {
+          roundedPercentages[maxIndex] =
+            Math.round((roundedPercentages[maxIndex] + diff) * 100) / 100;
+        }
       }
 
       const languagesWithAdjustedPercentage = filteredLanguages.map(
