@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/middleware";
+import { requireAuth , sanitizeError } from "@/lib/middleware";
 import {
   parsePullRequestUrl,
   reviewPullRequest,
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       pr: { url: result.prUrl || prUrl, title: result.prTitle },
     });
   } catch (error: any) {
-    console.error("PR review error:", error);
+    console.error("PR review error:", sanitizeError(error));
     return NextResponse.json(
       {
         error: "Failed to review PR",
@@ -51,4 +51,9 @@ export async function POST(request: NextRequest) {
       { status: 500 },
     );
   }
+
+  return NextResponse.json(
+    { error: "Failed to review PR", details: "Unexpected fallthrough" },
+    { status: 500 },
+  );
 }

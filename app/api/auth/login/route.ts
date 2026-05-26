@@ -1,12 +1,17 @@
+import { sanitizeError } from "@/lib/middleware";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { generateToken } from "@/lib/auth";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { email, password } = body;
+
+    // Normalize email to lowercase
+    const normalizedEmail = email.toLowerCase();
 
     // Validation
     if (!email || !password) {
@@ -18,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     // Find user
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (!user) {
@@ -74,8 +79,8 @@ export async function POST(request: NextRequest) {
       },
       token,
     });
-  } catch (error) {
-    console.error("Login error:", error);
+  } catch (error: any) {
+    logger.error({ err: sanitizeError(error) }, "Login error");
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

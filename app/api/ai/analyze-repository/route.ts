@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isHttpError, requireAuth } from "@/lib/middleware";
+import { isHttpError, requireAuth , sanitizeError } from "@/lib/middleware";
 import { getGeminiService } from "@/lib/services/geminiService";
 import { repositoryService } from "@/lib/services/repositoryService";
+import prisma from "@/lib/prisma";
+import {
+  getGeminiAnalysisCache,
+  hashGeminiPromptSeed,
+  setGeminiAnalysisCache,
+} from "@/lib/services/geminiAnalysisCacheService";
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,31 +15,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { repositoryId, type } = body;
 
-    if (repositoryId == null || type == null) {
+    if (!repositoryId || !type) {
       return NextResponse.json(
         { error: "Repository ID and analysis type are required" },
         { status: 400 }
       );
     }
 
-    const parsedRepoId = Number(repositoryId);
-    if (!Number.isFinite(parsedRepoId)) {
-      return NextResponse.json(
-        { error: "Repository ID must be a valid number" },
-        { status: 400 }
-      );
-    }
-
-    const validTypes = ["overview", "code-quality", "security", "architecture", "suggestions"];
-    if (typeof type !== "string" || !validTypes.includes(type)) {
-      return NextResponse.json(
-        { error: `Analysis type must be one of: ${validTypes.join(", ")}` },
-        { status: 400 }
-      );
-    }
-
     const repository = await repositoryService.getRepository(
-      parsedRepoId,
+      repositoryId,
       user.userId
     );
 
@@ -45,6 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     const context = {
+      targetDirectory: (repository as any).targetDirectory ?? undefined,
       languages: repository.languages.map((l: any) => ({
         name: l.name,
         percentage: l.percentage,
@@ -60,15 +51,53 @@ export async function POST(request: NextRequest) {
       })),
     };
 
-    const analysis = await getGeminiService().analyzeRepository({
-      repositoryId: parsedRepoId,
-      type: type as "overview" | "code-quality" | "security" | "architecture" | "suggestions",
+    const defaultBranch = repository.defaultBranch || "main";
+    const headCommit =
+      (await prisma.commit.findFirst({
+        where: { repositoryId, branch: defaultBranch },
+        orderBy: { committedAt: "desc" },
+        select: { hash: true },
+      })) ?? null;
+
+    const commitHash =
+      headCommit?.hash ||
+      (repository.commits?.[0] as any)?.hash ||
+      "unknown";
+
+    const promptHash = hashGeminiPromptSeed({
+      v: 1,
+      repositoryId,
+      commitHash,
+      type,
       context,
     });
 
-    return NextResponse.json({ analysis, type });
+    const cached = await getGeminiAnalysisCache({
+      repositoryId,
+      commitHash,
+      analysisType: type,
+      promptHash,
+    });
+
+    if (cached.hit && cached.result != null) {
+      return NextResponse.json({ analysis: cached.result, type, cached: true });
+    }
+
+    const analysis = await getGeminiService().analyzeRepository({
+      repositoryId,
+      type,
+      context,
+    });
+
+    await setGeminiAnalysisCache(
+      { repositoryId, commitHash, analysisType: type, promptHash },
+      analysis,
+      { model: "gemini-2.5-flash" },
+    );
+
+    return NextResponse.json({ analysis, type, cached: false });
   } catch (error: any) {
-    console.error("Repository analysis error:", error);
+    console.error("Repository analysis error:", sanitizeError(error));
 
     if (isHttpError(error)) {
       return NextResponse.json(

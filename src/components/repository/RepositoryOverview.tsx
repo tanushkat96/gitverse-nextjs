@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   GitBranch,
@@ -19,6 +19,7 @@ import {
   CardTitle,
   CardDescription,
   CardContent,
+  Skeleton,
 } from "@/components/ui";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -50,6 +51,23 @@ interface RepositoryOverviewProps {
 export const RepositoryOverview = ({
   repositoryData,
 }: RepositoryOverviewProps) => {
+  const [isFavorited, setIsFavorited] = useState(false);
+
+  const handleToggleFavorite = async (id: string, nextState: boolean) => {
+    // Simulate server API latency of 1.5 seconds
+    await new Promise((resolve, reject) => {
+      setTimeout(() => {
+        // Simulate a 30% chance of failure to showcase the try/catch rollback
+        if (Math.random() > 0.7) {
+          reject(new Error("Database connection lost. Please try again."));
+        } else {
+          setIsFavorited(nextState);
+          resolve(null);
+        }
+      }, 1500);
+    });
+  };
+
   // IMPORTANT: derive README directly from props so it always matches the
   // currently-selected repository (avoids showing stale README when navigating).
   const readmeText: string | null = repositoryData?.readmeText ?? null;
@@ -140,6 +158,9 @@ export const RepositoryOverview = ({
   }));
 
   const hasUsableReadme = Boolean(readmeText && readmeText !== "doesnt exist");
+  const isAnalyzing =
+    repositoryData?.status === "pending" ||
+    repositoryData?.status === "analyzing";
 
   const githubRawBase = (() => {
     const url = String(repositoryData?.url || "");
@@ -272,6 +293,14 @@ export const RepositoryOverview = ({
                 Updated {repository.updatedAt}
               </span>
             </div>
+          </div>
+          {/* Favorite Action Button */}
+          <div className="flex-shrink-0 self-start sm:self-center">
+            <FavoriteButton
+              initialIsFavorited={isFavorited}
+              repositoryId={repository.id}
+              onToggle={handleToggleFavorite}
+            />
           </div>
         </div>
 
@@ -427,7 +456,22 @@ export const RepositoryOverview = ({
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0 space-y-3">
-            {hasUsableReadme ? (
+            {isAnalyzing && !hasUsableReadme ? (
+              <div className="bg-background/50 border border-border/50 rounded-lg p-4 space-y-4" aria-busy="true" aria-label="Loading README">
+                <Skeleton className="h-8 w-1/3 sm:w-1/4" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-11/12" />
+                  <Skeleton className="h-4 w-5/6" />
+                </div>
+                <div className="pt-4 space-y-2">
+                  <Skeleton className="h-6 w-1/4 sm:w-1/5" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-4/5" />
+                  <Skeleton className="h-32 w-full mt-4" />
+                </div>
+              </div>
+            ) : hasUsableReadme ? (
               <div className="bg-background/50 border border-border/50 rounded-lg p-3 max-h-96 overflow-auto text-sm leading-relaxed">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
@@ -587,3 +631,4 @@ export const RepositoryOverview = ({
     </div>
   );
 };
+
