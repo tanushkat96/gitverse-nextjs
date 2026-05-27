@@ -44,7 +44,7 @@ export async function isRateLimited(
   windowMs: number
 ): Promise<boolean> {
   try {
-    await maybeCleanupStaleAttempts();
+    void maybeCleanupStaleAttempts();
     const since = new Date(Date.now() - windowMs);
 
     const count = await prisma.loginAttempt.count({
@@ -69,7 +69,7 @@ export async function countAttempts(
   windowMs: number
 ): Promise<number> {
   try {
-    await maybeCleanupStaleAttempts();
+    void maybeCleanupStaleAttempts();
     const since = new Date(Date.now() - windowMs);
 
     return await prisma.loginAttempt.count({
