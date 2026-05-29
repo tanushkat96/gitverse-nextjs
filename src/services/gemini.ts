@@ -175,6 +175,9 @@ User Question: ${message}
     }
   }
 
+  async simulatePullRequest(repositoryId: number | undefined, diff: string): Promise<string> {
+    try {
+      const res = await fetch("/api/ai/simulate-pr", {
   async compareRepositories(repositoryIds: number[]): Promise<string> {
     try {
       const res = await fetch("/api/ai/compare", {
@@ -184,12 +187,18 @@ User Question: ${message}
           "Content-Type": "application/json",
           ...this.getAuthHeaders(),
         },
+        body: JSON.stringify({ repositoryId, diff }),
         body: JSON.stringify({ repositoryIds }),
       });
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(
+          data?.error || "Failed to simulate pull request review"
+        );
+      }
+
+      const text = data?.review;
           data?.error || "Failed to compare repositories"
         );
       }
@@ -201,6 +210,12 @@ User Question: ${message}
 
       return text;
     } catch (error) {
+      console.error("PR simulator error:", error);
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to simulate pull request review"
+      );
+    }
+  }
       console.error("Repository comparison error:", error);
       throw new Error(
         error instanceof Error ? error.message : "Failed to compare repositories"
