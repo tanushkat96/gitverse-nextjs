@@ -386,6 +386,24 @@ Optional:
 A huge thank you to all contributors who have helped improve GitVerse ❤️
 Your efforts make this project stronger, more reliable, and more impactful for the community.
 
+<p align="center">
+  <a href="https://github.com/nisshchayarathi/gitverse-nextjs/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=nisshchayarathi/gitverse-nextjs" alt="Contributors"/>
+  </a>
+</p>
+
+## ⭐ Project Support
+
+<p align="center">
+  <a href="https://github.com/nisshchayarathi/gitverse-nextjs/stargazers">
+    <img src="https://img.shields.io/github/stars/nisshchayarathi/gitverse-nextjs?style=social" alt="Stars">
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://github.com/nisshchayarathi/gitverse-nextjs/network/members">
+    <img src="https://img.shields.io/github/forks/nisshchayarathi/gitverse-nextjs?style=social" alt="Forks">
+  </a>
+</p>
+
 ## 📄 License
 
 This project is licensed under the MIT License.
