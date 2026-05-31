@@ -20,6 +20,7 @@ import { GitHubChecksService } from "@/lib/services/github-checks";
 import { PremergePolicyEngine } from "@/lib/services/premerge-policy-engine";
 import { CheckSummaryService } from "@/lib/services/check-summary";
 import { CheckRecoveryService } from "@/lib/services/check-recovery";
+import { webhookQueue } from "@/lib/services/webhook-queue";
 
 export const runtime = "nodejs";
 export const maxDuration = 300; // 5 minutes max duration for Vercel
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
     return await handlePost(request);
   } finally {
     // Crucial: Drain the queue by picking up the next pending jobs
-    webhookQueue.triggerWorkers(baseUrl).catch(err => {
+    webhookQueue.triggerWorkers(baseUrl).catch((err: any) => {
       console.error("[Worker] Failed to trigger next jobs:", err);
     });
   }
@@ -411,6 +412,11 @@ async function handlePost(request: NextRequest) {
         error
       );
     }
+
+    const currentRetryCount = webhookEvent?.retryCount ?? 0;
+    const maxRetries = webhookEvent?.maxRetries ?? 3;
+    const shouldRetry = currentRetryCount < maxRetries;
+    const retryDelay = Math.pow(2, currentRetryCount) * 1000;
     
     await prisma.webhookEvent.update({
       where: { id: eventId },
@@ -420,7 +426,6 @@ async function handlePost(request: NextRequest) {
         retryCount: currentRetryCount + 1,
         nextRetryAt: shouldRetry ? new Date(Date.now() + retryDelay) : null,
       },
-      data: { status: "failed", error: String(error?.message || error) },
     });
 
     return NextResponse.json(
