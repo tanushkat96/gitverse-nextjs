@@ -180,6 +180,7 @@ export class AnalysisJobService {
         status: "FAILED",
         finishedAt: new Date(),
         progressMessage: "Analysis failed. Please try again.",
+        progressPercent: null,
         error: params.error,
         lockedAt: null,
         lockedBy: null,
