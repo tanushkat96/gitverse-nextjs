@@ -14,6 +14,12 @@ export interface AIAnalysisRequest {
     commits?: Array<{ message: string; author: string; date: string }>;
     languages?: Array<{ name: string; percentage: number }>;
     contributors?: Array<{ name: string; commits: number }>;
+    knowledge?: {
+      projectDescription?: string;
+      glossary?: Record<string, string>;
+      onboardingNotes?: string[];
+      architecturePrinciples?: string[];
+    };
   };
 }
 
@@ -32,6 +38,12 @@ export interface AIRepositoryChatRequest {
     files?: string[];
     recentCommits?: string[];
     contributors?: string[];
+    knowledge?: {
+      projectDescription?: string;
+      glossary?: Record<string, string>;
+      onboardingNotes?: string[];
+      architecturePrinciples?: string[];
+    };
   };
 }
 
@@ -252,16 +264,37 @@ Repository Context:
 - Languages: ${context?.languages?.map((l) => `${l.name} (${l.percentage}%)`).join(", ") || "Unknown"}
 - Contributors: ${context?.contributors?.length || 0}
 - Recent commits: ${context?.commits?.length || 0}
-${context?.fileTree ? `\nFile Structure:\n${context.fileTree}\n` : ""}
-`;
+${context?.fileTree ? `\nFile Structure:\n${context.fileTree}\n` : ""}`;
 
+    let knowledgeContext = "";
+    if (context?.knowledge) {
+      knowledgeContext += `\nMaintainer Context (Highest Priority):\n`;
+      if (context.knowledge.projectDescription) {
+        knowledgeContext += `Project Description: ${context.knowledge.projectDescription}\n`;
+      }
+      if (context.knowledge.architecturePrinciples?.length) {
+        knowledgeContext += `Architecture Principles:\n- ${context.knowledge.architecturePrinciples.join('\n- ')}\n`;
+      }
+      if (context.knowledge.glossary && Object.keys(context.knowledge.glossary).length > 0) {
+        knowledgeContext += `Glossary:\n`;
+        Object.entries(context.knowledge.glossary).forEach(([k, v]) => {
+          knowledgeContext += `- ${k}: ${v}\n`;
+        });
+      }
+      if (context.knowledge.onboardingNotes?.length) {
+        knowledgeContext += `Onboarding Notes:\n- ${context.knowledge.onboardingNotes.join('\n- ')}\n`;
+      }
+    }
+    
     const scopeNote = (context as any)?.targetDirectory
       ? `\nImportant: Restrict your analysis to the target directory (${(context as any).targetDirectory}). Only reference files outside this directory if they are immediately required dependencies.\n`
       : "";
 
+    const fullContext = `${knowledgeContext}${baseContext}${scopeNote}`;
+
     switch (type) {
       case "overview":
-        return `${baseContext}${scopeNote}
+        return `${fullContext}
 
 Provide a comprehensive overview of this repository including:
 1. Primary purpose and functionality
@@ -272,7 +305,7 @@ Provide a comprehensive overview of this repository including:
 Be concise but informative.`;
 
       case "code-quality":
-        return `${baseContext}${scopeNote}
+        return `${fullContext}
 
 Analyze the code quality of this repository:
 1. Code organization and structure
@@ -284,7 +317,7 @@ Analyze the code quality of this repository:
 Provide actionable insights.`;
 
       case "security":
-        return `${baseContext}${scopeNote}
+        return `${fullContext}
 
 Perform a security analysis:
 1. Potential security vulnerabilities
@@ -294,7 +327,7 @@ Perform a security analysis:
 5. Security best practices recommendations`;
 
       case "architecture":
-        return `${baseContext}${scopeNote}
+        return `${fullContext}
 
 Analyze the software architecture:
 1. Overall architecture pattern (MVC, microservices, etc.)
@@ -304,7 +337,7 @@ Analyze the software architecture:
 5. Architectural recommendations`;
 
       case "suggestions":
-        return `${baseContext}${scopeNote}
+        return `${fullContext}
 
 Provide improvement suggestions:
 1. Code refactoring opportunities
@@ -316,7 +349,7 @@ Provide improvement suggestions:
 Prioritize by impact and effort.`;
 
       default:
-        return `${baseContext}\n\nAnalyze this repository and provide insights.`;
+        return `${fullContext}\n\nAnalyze this repository and provide insights.`;
     }
   }
 
@@ -400,6 +433,24 @@ Provide refactored code examples.`;
       }
       if (context.contributors?.length) {
         prompt += `Contributors: ${context.contributors.slice(0, 5).join(", ")}\n`;
+      }
+      if (context.knowledge) {
+        prompt += `\nMaintainer Context (Highest Priority):\n`;
+        if (context.knowledge.projectDescription) {
+          prompt += `Project Description: ${context.knowledge.projectDescription}\n`;
+        }
+        if (context.knowledge.architecturePrinciples?.length) {
+          prompt += `Architecture Principles:\n- ${context.knowledge.architecturePrinciples.join('\n- ')}\n`;
+        }
+        if (context.knowledge.glossary && Object.keys(context.knowledge.glossary).length > 0) {
+          prompt += `Glossary:\n`;
+          Object.entries(context.knowledge.glossary).forEach(([k, v]) => {
+            prompt += `- ${k}: ${v}\n`;
+          });
+        }
+        if (context.knowledge.onboardingNotes?.length) {
+          prompt += `Onboarding Notes:\n- ${context.knowledge.onboardingNotes.join('\n- ')}\n`;
+        }
       }
       prompt += "\n";
     }

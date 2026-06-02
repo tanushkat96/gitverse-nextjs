@@ -264,6 +264,27 @@ if (existingRepositoryName) {
 
       checkAborted();
 
+      await report({ progressPercent: 9, progressMessage: "Checking AI context configuration" });
+      
+      let knowledgeJson: ParsedRepositoryKnowledge | undefined = undefined;
+      let knowledgeMd: ParsedRepositoryKnowledge | undefined = undefined;
+      
+      try {
+        const jsonPath = path.join(tempDir, ".gitverse.json");
+        const jsonContent = await fs.readFile(jsonPath, "utf8");
+        knowledgeJson = gitverseConfigParser.parseJson(jsonContent);
+      } catch (e) { /* Ignore missing or invalid */ }
+      
+      try {
+        const mdPath = path.join(tempDir, ".gitverse.md");
+        const mdContent = await fs.readFile(mdPath, "utf8");
+        knowledgeMd = gitverseConfigParser.parseMarkdown(mdContent);
+      } catch (e) { /* Ignore missing or invalid */ }
+      
+      const parsedKnowledge = gitverseConfigParser.mergeKnowledge(knowledgeJson, knowledgeMd);
+
+      checkAborted();
+
       await report({
         progressPercent: 10,
         progressMessage: "Calculating repository size...",
@@ -521,6 +542,13 @@ if (existingRepositoryName) {
           },
         });
       });
+      
+      // Save repository knowledge if found
+      try {
+        await repositoryKnowledgeService.upsertKnowledge(repositoryId, parsedKnowledge);
+      } catch (err) {
+        console.warn(`Failed to save repository knowledge for ${repositoryId}:`, err);
+      }
 
       // Cache invalidation (outside transaction — best-effort, non-critical)
       try {
@@ -588,6 +616,7 @@ if (existingRepositoryName) {
           orderBy: { path: "asc" },
           take: 500,
         },
+        knowledge: true,
       },
     });
 

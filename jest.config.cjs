@@ -10,6 +10,8 @@ const customJestConfig = {
   testMatch: [
     '<rootDir>/lib/**/__tests__/**/*.test.ts',
     '<rootDir>/lib/**/__tests__/**/*.test.tsx',
+    '<rootDir>/app/**/__tests__/**/*.test.ts',
+    '<rootDir>/app/**/__tests__/**/*.test.tsx',
     '<rootDir>/src/**/__tests__/**/*.test.ts',
     '<rootDir>/src/**/__tests__/**/*.test.tsx',
   ],
@@ -17,7 +19,7 @@ const customJestConfig = {
   moduleNameMapper: {
     '^@/lib/(.*)$': '<rootDir>/lib/$1',
     '^@/app/(.*)$': '<rootDir>/app/$1',
-    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@/(?!lib/|app/)(.*)$': '<rootDir>/src/$1',
   },
   testPathIgnorePatterns: [
     '<rootDir>/.next/',

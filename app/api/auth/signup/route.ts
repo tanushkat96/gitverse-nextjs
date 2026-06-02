@@ -6,6 +6,7 @@ import { generateToken } from "@/lib/auth";
 import { logger } from "@/lib/logger";
 import { getNextAuthSecret } from "@/lib/config/env";
 import crypto from "crypto";
+import { PASSWORD_REGEX } from "@/lib/utils/validators";
 import {
   getClientIp,
   countAttempts,
@@ -40,15 +41,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const passwordRegex =
-          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-
-    if (!passwordRegex.test(password)) {
+    if (!PASSWORD_REGEX.test(password)) {
       return NextResponse.json(
         {
           error:
             "Password must be at least 8 characters and include uppercase, lowercase, and a number",
         },
+        { status: 400 }
+      );
+    }
+
+    if (new TextEncoder().encode(password).length > 72) {
+      return NextResponse.json(
+        { error: "Password must be at most 72 bytes" },
         { status: 400 }
       );
     }

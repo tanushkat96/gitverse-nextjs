@@ -1,6 +1,7 @@
 import prisma from "../prisma";
-import crypto from "crypto";
 import { WebhookQueueStatus } from "../../types/database-health";
+import { SafeHttpClient } from "@/services/security/safe-http-client";
+import { deriveBearerToken } from "@/lib/utils/internalAuth";
 
 const MAX_CONCURRENT_WEBHOOKS = 5;
 
@@ -46,19 +47,20 @@ export class WebhookQueueService {
       if (!internalSecret) {
         throw new Error("INTERNAL_WORKER_SECRET not configured");
       }
-      const internalToken = `Bearer ${crypto.createHash('sha256').update(internalSecret).digest('hex')}`;
+      const internalToken = deriveBearerToken(internalSecret);
       const workerUrl = `${baseUrl}/api/internal/worker/webhook`;
 
       // Dispatch non-blocking fetches
       for (const job of nextJobs) {
-        fetch(workerUrl, {
+        SafeHttpClient.fetch(workerUrl, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "Authorization": internalToken,
           },
           body: JSON.stringify({ eventId: job.id }),
-        }).catch(err => {
+          allowLocalhost: true, // Allow localhost since it is an internal route
+        }).catch((err: any) => {
           console.error(`[WebhookQueue] Failed to trigger worker for job ${job.id}:`, err);
         });
       }

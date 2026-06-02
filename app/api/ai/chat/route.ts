@@ -238,6 +238,30 @@ Do not include any Markdown formatting like \`\`\`json, explanation, or extra ch
       }
     }
 
+    let knowledgeContext = "";
+    if ((repository as any).knowledge) {
+      const k = (repository as any).knowledge;
+      knowledgeContext += `\nMaintainer Context (Highest Priority):\n`;
+      if (k.projectDescription) {
+        knowledgeContext += `Project Description: ${k.projectDescription}\n`;
+      }
+      if (k.architecturePrinciples) {
+        const ap = JSON.parse(k.architecturePrinciples);
+        if (ap.length) knowledgeContext += `Architecture Principles:\n- ${ap.join('\n- ')}\n`;
+      }
+      if (k.glossary) {
+        knowledgeContext += `Glossary:\n`;
+        Object.entries(k.glossary).forEach(([key, val]) => {
+          knowledgeContext += `- ${key}: ${val}\n`;
+        });
+      }
+      if (k.onboardingNotes) {
+        const on = JSON.parse(k.onboardingNotes);
+        if (on.length) knowledgeContext += `Onboarding Notes:\n- ${on.join('\n- ')}\n`;
+      }
+      knowledgeContext += `\n`;
+    }
+
     // Construct the fully grounded RAG prompt
     const enhancedPrompt = `You are an expert developer assistant for the repository "${repository.name}".
 You are answering a user's question about the codebase.
@@ -247,7 +271,7 @@ Repository Context:
 - Description: ${repository.description || "N/A"}
 - Languages: ${repository.languages.map((l: any) => `${l.name} (${l.percentage}%)`).join(", ")}
 - Stats: ${repository.commits?.length || 0} commits, ${repository.contributors?.length || 0} contributors, ${repository.files?.length || 0} files
-
+${knowledgeContext}
 ${retrievedFilesContent ? `===== RETRIEVED CODEBASE CONTEXT =====\n${retrievedFilesContent}\n===== END RETRIEVED CONTEXT =====\n` : ""}
 
 Answer the following user question using the codebase context above. Ground your answer in the provided file contents and repository context.
