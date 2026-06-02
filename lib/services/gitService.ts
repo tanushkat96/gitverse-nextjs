@@ -915,12 +915,32 @@ export class GitService {
    */
   async getRepositorySize(): Promise<number> {
     try {
-      const { stdout } = await spawnOutput("du", ["-sb", "."], {
-        cwd: this.repoPath,
-        signal: this.signal,
-        timeout: DEFAULT_GIT_TIMEOUT_MS,
-      });
-      return parseInt(stdout.trim().split("\t")[0]);
+      let totalSize = 0;
+      const stack: string[] = [this.repoPath];
+
+      while (stack.length > 0) {
+        const currentPath = stack.pop()!;
+        try {
+          const entries = await fs.readdir(currentPath, { withFileTypes: true });
+          for (const entry of entries) {
+            const entryPath = path.join(currentPath, entry.name);
+            if (entry.isDirectory()) {
+              stack.push(entryPath);
+            } else if (entry.isFile()) {
+              try {
+                const stat = await fs.stat(entryPath);
+                totalSize += stat.size;
+              } catch {
+                // Ignore files that cannot be accessed or stated
+              }
+            }
+          }
+        } catch {
+          // Ignore directories that cannot be read
+        }
+      }
+
+      return totalSize;
     } catch (error: any) {
       return 0;
     }
