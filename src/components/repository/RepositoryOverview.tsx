@@ -27,6 +27,7 @@ import { BeginnerModeToggle } from "@/components/repository/BeginnerModeToggle";
 import { BeginnerGuidanceCard } from "@/components/repository/BeginnerGuidanceCard";
 import { BeginnerQuestionsPanel } from "@/components/repository/BeginnerQuestionsPanel";
 import { QuickStartChecklist } from "@/components/repository/QuickStartChecklist";
+import { FolderImportanceGuide } from "@/components/repository/FolderImportanceGuide";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
@@ -487,6 +488,8 @@ export const RepositoryOverview = ({
         )}
 
         <QuickStartChecklist />
+
+        <FolderImportanceGuide />
       </div>
 
       {/* Repository Stats Grid */}
