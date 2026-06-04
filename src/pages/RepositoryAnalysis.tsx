@@ -71,6 +71,11 @@ const tabs: Tab[] = [
     label: "Insights",
     icon: <BarChart3 className="h-4 w-4" />,
   },
+  {
+    id: "dead-code",
+    label: "Dead Code",
+    icon: <FileX2 className="h-4 w-4" />,
+  },
 ];
 
 const StatusBadge = ({ status, isAnalyzing }: { status: string; isAnalyzing: boolean }) => {
@@ -584,7 +589,13 @@ export default function RepositoryAnalysis() {
                     {tabs.map((tab) => (
                       <button
                         key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
+                        onClick={() => {
+                          if (tab.id === "dead-code") {
+                            router.push(`/repo/${id}/dead-code`);
+                          } else {
+                            setActiveTab(tab.id);
+                          }
+                        }}
                         className={`
                           flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-300 whitespace-nowrap w-full sm:w-auto justify-center
                           ${
