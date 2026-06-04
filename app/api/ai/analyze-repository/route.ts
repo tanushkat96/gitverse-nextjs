@@ -10,12 +10,16 @@ import {
 import { buildCacheKey } from "@/lib/utils/cacheKey";
 import { buildTreeFromFiles, truncateTree, stringifyTree } from "@/lib/utils/tokenLimits";
 import { validateContentType } from "@/lib/utils/aiRequestValidation";
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/middleware/rateLimit";
 
 const CURRENT_MODEL_VERSION = "gemini-2.5-flash";
 
 export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth(request);
+
+    const globalRl = await checkRateLimit(String(user.userId), RATE_LIMITS.AI_GLOBAL);
+    if (!globalRl.allowed) return rateLimitResponse(globalRl);
 
     const contentTypeError = validateContentType(request);
     if (contentTypeError) return contentTypeError;

@@ -7,6 +7,7 @@ import { analysisJobService } from "@/lib/services/analysisJobService";
 import { sanitizeError } from "@/lib/middleware";
 import { triggerAnalysisWorkerWorkflow } from "@/lib/services/analysisWorkerTriggerService";
 import { normalizeTargetDirectory } from "@/lib/utils/repositoryUtils";
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/middleware/rateLimit";
 
 function normalizeKnownRepoHttpUrl(input: string): string | null {
   let parsed: URL;
@@ -59,6 +60,8 @@ function kickProductionWorker() {
 export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth(request);
+    const rl = await checkRateLimit(String(user.userId), RATE_LIMITS.ANALYZE_REPOSITORY);
+    if (!rl.allowed) return rateLimitResponse(rl);
     const body = await request.json();
 
     const repositoryIdRaw = body?.repositoryId;

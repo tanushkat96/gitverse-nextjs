@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/middleware";
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/middleware/rateLimit";
 
 export async function GET(request: NextRequest) {
   try {
     // Basic admin check (could be expanded)
-    await requireAuth(request);
+    const user = await requireAuth(request);
+    const rl = await checkRateLimit(String(user.userId), RATE_LIMITS.ADMIN_DLQ);
+    if (!rl.allowed) return rateLimitResponse(rl);
 
     const { searchParams } = new URL(request.url);
     const take = Number(searchParams.get("take")) || 50;

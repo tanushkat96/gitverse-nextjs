@@ -19,6 +19,7 @@ import { GitService } from "@/lib/services/gitService";
 import { logger } from "@/lib/logger";
 import { apiError, apiSuccess } from "@/lib/utils/apiResponse";
 import { isValidGitScope } from "@/lib/utils/validators";
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/middleware/rateLimit";
 function kickLocalRunner(request: NextRequest) {
   if (process.env.NODE_ENV === "production") return;
   const origin = new URL(request.url).origin;
@@ -70,6 +71,9 @@ function normalizeGitHubRepoUrl(input: string): string | null {
 export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth(request);
+
+    const burstRl = await checkRateLimit(String(user.userId), RATE_LIMITS.REPOSITORY_CREATE_BURST);
+    if (!burstRl.allowed) return rateLimitResponse(burstRl);
 
     const attemptsCount = await countAttempts(
       String(user.userId),

@@ -4,6 +4,7 @@ import { repositoryService } from "@/lib/services/repositoryService";
 import { analysisJobService } from "@/lib/services/analysisJobService";
 import { apiError } from "@/lib/api-error";
 import { isValidGitScope } from "@/lib/utils/validators";
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/middleware/rateLimit";
 
 export async function POST(
   request: NextRequest,
@@ -12,6 +13,9 @@ export async function POST(
   try {
     const user = await requireAuth(request);
     const id = parseInt(params.id);
+
+    const rl = await checkRateLimit(String(user.userId), RATE_LIMITS.REPOSITORY_ANALYZE);
+    if (!rl.allowed) return rateLimitResponse(rl);
 
     if (isNaN(id)) {
       return apiError(400, "Invalid repository ID");

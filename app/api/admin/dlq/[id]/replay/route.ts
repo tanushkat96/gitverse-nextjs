@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/middleware";
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/middleware/rateLimit";
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     await requireAuth(request);
+    const rl = await checkRateLimit("admin", RATE_LIMITS.ADMIN_DLQ_REPLAY);
+    if (!rl.allowed) return rateLimitResponse(rl);
 
     const eventId = params.id;
     if (!eventId) {

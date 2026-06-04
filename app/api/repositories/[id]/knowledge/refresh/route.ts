@@ -9,6 +9,7 @@ import * as crypto from "crypto";
 import * as fs from "fs/promises";
 import { gitverseConfigParser } from "@/lib/parsers/gitverseConfigParser";
 import { repositoryKnowledgeService } from "@/lib/services/repositoryKnowledgeService";
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/middleware/rateLimit";
 
 export async function POST(
   request: NextRequest,
@@ -16,6 +17,8 @@ export async function POST(
 ) {
   try {
     const user = await requireAuth(request);
+    const rl = await checkRateLimit(String(user.userId), RATE_LIMITS.REPOSITORY_KNOWLEDGE_REFRESH);
+    if (!rl.allowed) return rateLimitResponse(rl);
     const repositoryId = parseInt(params.id, 10);
 
     if (isNaN(repositoryId)) {

@@ -4,6 +4,7 @@ import { repositoryService } from "@/lib/services/repositoryService";
 import { analysisJobService } from "@/lib/services/analysisJobService";
 import { triggerAnalysisWorkerWorkflow } from "@/lib/services/analysisWorkerTriggerService";
 import prisma from "@/lib/prisma";
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/middleware/rateLimit";
 
 export async function POST(
     request: NextRequest,
@@ -11,6 +12,8 @@ export async function POST(
 ) {
     try {
         const user = await requireAuth(request);
+        const rl = await checkRateLimit(String(user.userId), RATE_LIMITS.REPOSITORY_ARCHITECTURE);
+        if (!rl.allowed) return rateLimitResponse(rl);
 
         if (!/^\d+$/.test(params.id)) {
             return NextResponse.json({ error: "Invalid repository ID format" }, { status: 400 });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isHttpError, requireAuth, sanitizeError } from "@/lib/middleware";
 import { repositoryService } from "@/lib/services/repositoryService";
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/middleware/rateLimit";
 
 const MAX_FILE_PATH_LENGTH = 1024;
 const MAX_FILE_SIZE = 1024 * 1024; // 1MB
@@ -83,6 +84,9 @@ export async function GET(
     const id = parseInt(params.id);
     const searchParams = request.nextUrl.searchParams;
     const filePath = searchParams.get("path");
+
+    const rl = await checkRateLimit(String(user.userId), RATE_LIMITS.FILE_CONTENT);
+    if (!rl.allowed) return rateLimitResponse(rl);
 
     if (isNaN(id)) {
       return NextResponse.json(

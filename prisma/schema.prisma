@@ -628,6 +628,8 @@ model RateLimit {
 
   @@index([key])
   @@index([expiresAt])
+  @@index([key, expiresAt])
+  @@index([expiresAt], name: "rate_limits_expires_at_idx")
   @@map("rate_limits")
 }
 
